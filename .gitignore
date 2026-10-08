@@ -1,0 +1,11 @@
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+*.key
+*.pem
+auth.json
+opencode.json
+opencode.jsonc
+sessions/
