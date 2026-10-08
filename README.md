@@ -2,117 +2,117 @@
 
 [![CI](https://github.com/anasfik/better-opencode-efficient-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/anasfik/better-opencode-efficient-agents/actions/workflows/ci.yml)
 
-A provider-neutral OpenCode V2 agent pack for everyday software delivery. It
-turns recurring workflow failures into ten small roles with one workspace
-mutator, bounded delegation, explicit verification, and approval-gated remote
-actions.
+**Dev-friendly pack:** 10 namespaced OpenCode V2 agents — one workspace mutator (`efficient/ship`), 8 read-only audit/subagent roles, plus an evidence-backed planning primary (`efficient/architect`). Zero model pins (inherit your session), zero framework dependencies, zero vendor lock-in. Tested against OpenCode v2.0.25.
 
-Tested with OpenCode `v2.0.25`.
+Quick links: [Install](#install) · [Validate](#validate) · [Agents](#agents) · [Usage analysis](docs/usage-analysis.md)
 
-## Why this pack exists
+---
 
-An anonymized, read-only analysis of 846 OpenCode sessions found that missing
-targets and stale edits caused 42.7% of tool errors, while 54 of 150 sessions
-that requested verification showed no check evidence. The pack therefore makes
-fresh discovery, narrow edits, root-level checks, and a final conclusion part
-of the normal flow. See [`docs/usage-analysis.md`](docs/usage-analysis.md).
+## At a glance
+
+| What | How |
+|---|---|
+| **Copy agents into OpenCode** | Run the quoted prompt below, or `./scripts/install.sh --global` / `--project` |
+| **Make them active** | `opencode reload` then `opencode debug agents` — all 10 `efficient/*` IDs should list |
+| **Try them** | `opencode run --agent efficient/architect "Inspect this repo and produce a read-only plan."` |
+| **Check before use** | `./scripts/check.sh` + `./scripts/test-install.sh` |
+
+---
+
+## Why this exists
+
+This isn't a framework or starter — it's a discipline. The pack came from a read-only analysis of **846 OpenCode sessions** (270 root, 576 child): 42.7% of tool errors came from missing targets or stale edit context; 54 of 150 verification-requesting sessions showed no evidenced check; 40 finished with no root-level conclusion. The design is the smallest response: **discover paths first, edit narrowly, re-read after child work, verify explicitly, and finish with evidence not just tool output**.
+
+See [`docs/usage-analysis.md`](docs/usage-analysis.md) for aggregate statistics and the mapping from observed failures to agent roles.
+
+---
 
 ## Agents
 
-| ID | Mode | Purpose |
-|---|---|---|
-| `efficient/ship` | primary | Sole workspace mutator and delivery integrator |
-| `efficient/architect` | primary | Read-only implementation planning and risk analysis |
-| `efficient/explorer` | subagent | Path discovery, caller tracing, and root-cause evidence |
-| `efficient/docs-scout` | subagent | Current official documentation and version research |
-| `efficient/verify` | subagent | Tests, runtime checks, logs, and health evidence |
-| `efficient/code-review` | subagent | Correctness, security, regression, and data-loss review |
-| `efficient/ui-review` | subagent | Conditional UI, accessibility, responsive, RTL, and web review |
-| `efficient/data-audit` | subagent | Schema, migration, transaction, API, and backup review |
-| `efficient/release` | subagent | Approval-gated artifact, deployment, and release operations |
-| `efficient/product-owner` | subagent | Scope, acceptance criteria, QA, and stakeholder summaries |
+```
+efficient/ship         primary   sole workspace mutator; integrates and reports
+efficient/architect     primary   read-only plans, risks, reversible slices
+efficient/explorer     subagent  path discovery + caller tracing + root-cause evidence
+efficient/docs-scout    subagent  installed-version docs + official sources
+efficient/verify       subagent  tests / logs / health evidence
+efficient/code-review  subagent  correctness, regression, safety, data loss
+efficient/ui-review    subagent  rendered UI / a11y / responsive / RTL / web meta
+efficient/data-audit   subagent  schema / migration / transaction / backup review
+efficient/release      subagent  build / sign / deploy / rollback (approval required)
+efficient/product-owner subagent  scope / acceptance / QA / stakeholder update
+```
 
-Agent definitions omit `model`, so they inherit the active session model. The
-core pack requires no framework CLI, plugin, MCP server, or provider.
+Every agent uses `deny` first, then allows only what's required. Only `ship` gets `edit`. All others deny writes by default; `shell` and `external_directory` ask, not allow.
 
-## Install
+---
 
-Clone the pack once:
+## Install to your OpenCode config (copy / configure)
+
+Copy this repo's `agents/efficient/` folder into your OpenCode agents folder so the 10 IDs become available globally.
+
+> **OpenCode prompt — copy/paste into your session:**
+>
+> ```
+> "Install agents of this repo to opencode config folder and set agents on it."
+> ```
+>
+> That instructs the agent to copy `agents/efficient/` into `~/.config/opencode/agents/efficient/` (creating `efficient/*` agent IDs in your config folder) and configure that folder so OpenCode discovers them — equivalent to `mkdir -p ~/.config/opencode/agents/efficient/` and copying the `.md` files into it, then running `opencode reload`.
+
+Or use the install script from this repo (project-local or global):
 
 ```sh
 git clone https://github.com/anasfik/better-opencode-efficient-agents.git
 cd better-opencode-efficient-agents
-```
-
-Project-local installation is recommended for teams:
-
-```sh
+# Project-local (recommended for teams):
 ./scripts/install.sh --project /path/to/project
-cd /path/to/project
-opencode reload
-opencode debug agents
-```
-
-Global installation:
-
-```sh
+# Global (every project gets the same agents):
 ./scripts/install.sh --global
-opencode reload
-opencode debug agents
 ```
 
-Run the same command to upgrade. Existing `efficient/` files are copied to a
-timestamped backup outside the agent discovery directory before replacement.
-Unrelated agents and OpenCode configuration are never changed.
+Upgrade: rerun the same command; it copies to a timestamped backup, swaps atomically with a lock, and restores if interrupted.
 
-Installs are serialized with a lock in the agent directory, and an interrupted
-or failed replacement restores the previous agents. If a stale lock remains
-after a crash, remove `.efficient.lock` inside the agent directory.
+After either method: `opencode reload` then `opencode debug agents` — confirm all 10 `efficient/*` IDs appear.
 
-This pack does not change `default_agent`. Select `efficient/ship` in OpenCode,
-or set it yourself after reviewing the agent.
+---
 
 ## Validate
 
 ```sh
-./scripts/check.sh
-./scripts/test-install.sh
+./scripts/check.sh        # checks 10 agents, 2 primary / 8 subagent, deny-first, .env prompts, no model pins, privacy scan
+./scripts/test-install.sh # fresh install, upgrade, unrelated preservation, concurrent lock, interrupt rollback
 opencode reload
 opencode debug agents
 opencode run --agent efficient/architect \
-  "Inspect this repository and produce a read-only implementation plan."
+  "Inspect this repo and produce a read-only implementation plan."
 ```
 
-`check.sh` validates the agent definitions and scans the published files for
-private paths, session identifiers, and credential-shaped values.
-`test-install.sh` exercises fresh install, upgrade backup, unrelated-agent
-preservation, concurrent installers, and interrupted-install rollback in
-temporary directories.
+---
 
 ## Safety model
 
-- Only `efficient/ship` has the edit tool enabled. Read-only roles have no edit
-  tool, although their approval-gated shell can still touch the filesystem.
-- Every agent keeps the OpenCode default prompt before reading `.env` files.
-- Shell and external operations require approval.
-- Release and tracker mutations require confirmation immediately before use.
-- Read-only roles deny all actions first, then allow only required inspection.
-- The parent agent owns synthesis, checks, and the final conclusion.
-- No raw session history, credentials, personal paths, or model pins ship here.
+- Only `efficient/ship` has `edit`; every agent keeps `deny-all` first.
+- Every agent keeps OpenCode's built-in `*.env` / `*.env.*` prompts; `*.env.example` is allowed.
+- Shell / external-directory: `ask`; release/deploy/promote: confirmation required immediately before use.
+- Read-only roles deny changes by default. No agent asserts "only edit tool matters" — the permission matrix is the guard.
+- Parent owns synthesis, checks, and final conclusion. Child success is not parent completion.
+- Nothing in this repo: credentials, session IDs, personal paths, raw prompts, model pins.
+
+---
 
 ## Compatibility
 
-OpenCode V2 has no official agent package registry. This repository uses the
-documented namespaced Markdown layout and copy-based installation:
+OpenCode V2 has no agent package registry. This repo uses the documented namespaced Markdown convention (`.opencode/agents/<ns>/*.md` → agent IDs `<ns>/<name>`). Works with any V2-compatible CLI (`opencode v2.0.25` tested).
 
-- [Agents](https://opencode.ai/v2/docs/agents/)
-- [Permissions](https://opencode.ai/v2/docs/permissions/)
-- [Tools](https://opencode.ai/v2/docs/tools/)
-- [Instructions](https://opencode.ai/v2/docs/instructions/)
+---
+
+## What's not in the core pack (optional extensions, not needed for daily delivery)
+
+- Flutter / Cloudflare / App-Store / store-release workflows → add `flutter-audit`/`flutter-ship`, `cf-deploy`, `release-ops` only when that stack is active.
+- Vendor-specific APIs (Reqistry, Quickmail, AdGuard, Lovable, Nostr) → use the relevant MCP / integration, not a default agent.
+- Session history mining → keep private; do not include session DB access in a public pack.
+
+---
 
 ## License
 
-MIT
-
-Security reports should follow [`SECURITY.md`](SECURITY.md). Contributions are
-welcome under [`CONTRIBUTING.md`](CONTRIBUTING.md).
+MIT. Security reports: Follow [`SECURITY.md`](SECURITY.md). Contributions: [`CONTRIBUTING.md`](CONTRIBUTING.md).
