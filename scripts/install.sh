@@ -32,6 +32,7 @@ staged=$agent_root/.efficient.new.$$
 old=$agent_root/.efficient.old.$$
 backup=
 committed=0
+replacement_started=0
 
 mkdir -p "$agent_root"
 
@@ -44,13 +45,23 @@ while ! mkdir "$lock" 2>/dev/null; do
 done
 
 cleanup() {
-  # An uncommitted replacement must leave the previous namespace in place.
-  if [ "$committed" -eq 0 ] && [ -e "$old" ] && [ ! -e "$destination" ]; then
-    mv "$old" "$destination" 2>/dev/null || true
+  status=$?
+  trap - EXIT
+  # A signal can arrive after the new namespace was moved into place but before
+  # the commit flag was set. Remove that uncommitted copy and restore the old one.
+  if [ "$committed" -eq 0 ] && [ "$replacement_started" -eq 1 ]; then
+    [ ! -e "$destination" ] || rm -rf -- "$destination"
+    if [ -e "$old" ] && ! mv "$old" "$destination"; then
+      echo "could not restore previous agents from $old" >&2
+      status=1
+    fi
   fi
   [ ! -e "$staged" ] || rm -rf -- "$staged"
-  [ ! -e "$old" ] || rm -rf -- "$old"
+  if [ "$committed" -eq 1 ]; then
+    [ ! -e "$old" ] || rm -rf -- "$old"
+  fi
   rmdir "$lock" 2>/dev/null || true
+  exit "$status"
 }
 
 interrupted() {
@@ -71,6 +82,7 @@ if [ -e "$destination" ]; then
   mv "$destination" "$old"
 fi
 
+replacement_started=1
 if ! mv "$staged" "$destination"; then
   echo "installation failed; previous agents restored" >&2
   exit 1

@@ -17,11 +17,16 @@ ok() {
 }
 
 count_agents() {
-  find "$1" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' '
+  set -- "$1"/*.md
+  [ -e "$1" ] || { echo 0; return; }
+  echo "$#"
 }
 
 leftovers() {
-  find "$1" -maxdepth 1 -name '.efficient.*' | grep -q .
+  for path in "$1"/.efficient.*; do
+    [ -e "$path" ] && return 0
+  done
+  return 1
 }
 
 # 1. Fresh project install produces exactly the ten agent definitions.
@@ -81,7 +86,12 @@ real_mv=$(command -v mv)
 cat > "$bindir/mv" <<EOF
 #!/bin/sh
 case "\$1" in
-  *.efficient.new.*) sleep 3; exit 1 ;;
+  *.efficient.new.*)
+    "$real_mv" "\$@"
+    kill -TERM "\$PPID"
+    sleep 2
+    exit 143
+    ;;
 esac
 exec "$real_mv" "\$@"
 EOF
@@ -93,8 +103,6 @@ while [ -e "$itarget" ] && [ "$waited" -lt 10 ]; do
   sleep 1
   waited=$((waited + 1))
 done
-[ -e "$itarget" ] && fail "upgrade never started replacing the namespace"
-kill -TERM "$pid" 2>/dev/null || true
 if wait "$pid" 2>/dev/null; then
   fail "interrupted installer exited 0"
 fi

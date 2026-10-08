@@ -12,7 +12,8 @@ fail() {
 
 [ -d "$agents" ] || fail "missing agents/efficient"
 
-count=$(find "$agents" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')
+set -- "$agents"/*.md
+count=$#
 [ "$count" -eq 10 ] || fail "expected 10 agents, found $count"
 
 for name in $expected; do
@@ -47,8 +48,12 @@ if grep -R -A2 'action: shell' "$agents"/*.md | grep -q 'effect: allow'; then
   fail "shell must require approval"
 fi
 
-if grep -R -E -n '(/home/[[:alnum:]_.-]+|ses_[[:alnum:]]+|Bearer[[:space:]]+[[:alnum:]_.-]+|Authorization:[[:space:]]*[^<{])' \
-  "$root/README.md" "$root/docs" "$root/agents"; then
+private_home='/'home'/[[:alnum:]_.-]+'
+session_id='s''es_[[:alnum:]]+'
+bearer='Bear''er[[:space:]]+[[:alnum:]_.-]+'
+authorization='Authoriza''tion:[[:space:]]*[^<{]'
+if git -C "$root" ls-files -z --cached --others --exclude-standard | \
+  xargs -0 grep -I -E -n "($private_home|$session_id|$bearer|$authorization)"; then
   fail "private path, session identifier, or credential-like value found"
 fi
 

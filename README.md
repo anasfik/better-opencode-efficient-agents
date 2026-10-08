@@ -1,5 +1,7 @@
 # Better OpenCode Efficient Agents
 
+[![CI](https://github.com/anasfik/better-opencode-efficient-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/anasfik/better-opencode-efficient-agents/actions/workflows/ci.yml)
+
 A provider-neutral OpenCode V2 agent pack for everyday software delivery. It
 turns recurring workflow failures into ten small roles with one workspace
 mutator, bounded delegation, explicit verification, and approval-gated remote
@@ -34,6 +36,13 @@ Agent definitions omit `model`, so they inherit the active session model. The
 core pack requires no framework CLI, plugin, MCP server, or provider.
 
 ## Install
+
+Clone the pack once:
+
+```sh
+git clone https://github.com/anasfik/better-opencode-efficient-agents.git
+cd better-opencode-efficient-agents
+```
 
 Project-local installation is recommended for teams:
 
@@ -104,3 +113,6 @@ documented namespaced Markdown layout and copy-based installation:
 ## License
 
 MIT
+
+Security reports should follow [`SECURITY.md`](SECURITY.md). Contributions are
+welcome under [`CONTRIBUTING.md`](CONTRIBUTING.md).

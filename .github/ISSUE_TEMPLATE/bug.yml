@@ -1,0 +1,31 @@
+name: Bug report
+description: Report a reproducible agent, installer, or validation problem
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenCode version
+      placeholder: opencode v2.x.x
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Minimal commands or steps. Redact credentials and private data.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Validation output
+      description: Relevant output from check.sh, test-install.sh, or debug agents.

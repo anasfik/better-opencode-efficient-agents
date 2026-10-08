@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate agents
+        run: ./scripts/check.sh
+      - name: Test installer
+        run: ./scripts/test-install.sh
+      - name: Check whitespace
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
+            git diff --check "$BASE_SHA" HEAD
+          else
+            git show --check --format= HEAD
+          fi
