@@ -49,11 +49,15 @@ cleanup() {
   trap - EXIT
   # A signal can arrive after the new namespace was moved into place but before
   # the commit flag was set. Remove that uncommitted copy and restore the old one.
-  if [ "$committed" -eq 0 ] && [ "$replacement_started" -eq 1 ]; then
-    [ ! -e "$destination" ] || rm -rf -- "$destination"
-    if [ -e "$old" ] && ! mv "$old" "$destination"; then
-      echo "could not restore previous agents from $old" >&2
-      status=1
+  if [ "$committed" -eq 0 ]; then
+    if [ -e "$old" ]; then
+      [ ! -e "$destination" ] || rm -rf -- "$destination"
+      if ! mv "$old" "$destination"; then
+        echo "could not restore previous agents from $old" >&2
+        status=1
+      fi
+    elif [ "$replacement_started" -eq 1 ]; then
+      [ ! -e "$destination" ] || rm -rf -- "$destination"
     fi
   fi
   [ ! -e "$staged" ] || rm -rf -- "$staged"

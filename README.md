@@ -119,8 +119,9 @@ opencode run --agent efficient/ship \
 ## Safety model
 
 - Only `efficient/ship` can edit workspace files.
-- Only `ship` and `release-ops` expose shell or execute, and both require
-  approval for every use.
+- Only `ship` and `release-ops` expose shell or execute; both default to `ask`.
+  Choose **Allow once** when prompted, never save broad approval patterns, and
+  never use auto-approval for `release-ops`.
 - Every specialist can load applicable skills without gaining edit access.
 - Release, deploy, publish, promote, destructive, account, and production
   actions require confirmation immediately before the mutation.
