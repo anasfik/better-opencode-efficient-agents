@@ -4,6 +4,7 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 install=$root/scripts/install.sh
+roster='data opencode quality release-ops research seo ship ui-mobile'
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT HUP INT TERM
 
@@ -16,10 +17,25 @@ ok() {
   echo "ok: $1"
 }
 
-count_agents() {
-  set -- "$1"/*.md
-  [ -e "$1" ] || { echo 0; return; }
-  echo "$#"
+assert_roster() {
+  directory=$1
+  label=$2
+  actual_count=0
+  for file in "$directory"/*.md; do
+    [ -f "$file" ] || continue
+    name=${file##*/}
+    name=${name%.md}
+    case " $roster " in
+      *" $name "*) ;;
+      *) fail "$label has unexpected agent $name.md" ;;
+    esac
+    actual_count=$((actual_count + 1))
+  done
+  set -- $roster
+  [ "$actual_count" -eq "$#" ] || fail "$label expected $# agents, found $actual_count"
+  for name in $roster; do
+    [ -f "$directory/$name.md" ] || fail "$label missing $name.md"
+  done
 }
 
 leftovers() {
@@ -29,25 +45,33 @@ leftovers() {
   return 1
 }
 
-# 1. Fresh project install produces exactly the ten agent definitions.
+# 1. Fresh project install produces exactly the expected agent definitions.
 fresh=$work/fresh
 mkdir -p "$fresh"
 "$install" --project "$fresh" >/dev/null
 target=$fresh/.opencode/agents/efficient
 [ -d "$target" ] || fail "fresh install produced no namespace"
-[ "$(count_agents "$target")" -eq 10 ] || fail "fresh install agent count"
+assert_roster "$target" "fresh install"
 leftovers "$fresh/.opencode/agents" && fail "fresh install left staging files"
 ok "fresh project install"
 
 # 2. Upgrade backs up local edits, drops them, and keeps unrelated agents.
 printf 'x\n' > "$fresh/.opencode/agents/unrelated.md"
 printf 'local\n' > "$target/LOCAL-MARKER"
+printf 'obsolete architect\n' > "$target/architect.md"
+printf 'obsolete verifier\n' > "$target/verify.md"
 "$install" --project "$fresh" >/dev/null
 [ ! -e "$target/LOCAL-MARKER" ] || fail "stale local marker survived upgrade"
-[ "$(count_agents "$target")" -eq 10 ] || fail "upgrade agent count"
+assert_roster "$target" "upgrade"
+[ ! -e "$target/architect.md" ] || fail "obsolete architect survived upgrade"
+[ ! -e "$target/verify.md" ] || fail "obsolete verifier survived upgrade"
 [ -f "$fresh/.opencode/agents/unrelated.md" ] || fail "unrelated agent removed"
 backups=$fresh/.opencode/backups/better-opencode-efficient-agents
 find "$backups" -name LOCAL-MARKER | grep -q . || fail "upgrade kept no backup"
+find "$backups" -name architect.md -exec grep -l '^obsolete architect$' {} \; | grep -q . ||
+  fail "backup lost obsolete architect"
+find "$backups" -name verify.md -exec grep -l '^obsolete verifier$' {} \; | grep -q . ||
+  fail "backup lost obsolete verifier"
 leftovers "$fresh/.opencode/agents" && fail "upgrade left staging files"
 ok "upgrade backup and unrelated agent preserved"
 
@@ -69,7 +93,7 @@ second=$!
 wait "$first" || fail "first concurrent install failed"
 wait "$second" || fail "second concurrent install failed"
 ctarget=$concurrent/.opencode/agents
-[ "$(count_agents "$ctarget/efficient")" -eq 10 ] || fail "concurrent agent count"
+assert_roster "$ctarget/efficient" "concurrent install"
 [ -d "$ctarget/efficient/efficient" ] && fail "concurrent install nested a namespace"
 leftovers "$ctarget" && fail "concurrent install left staging files"
 ok "concurrent installs serialize"
@@ -107,7 +131,7 @@ if wait "$pid" 2>/dev/null; then
   fail "interrupted installer exited 0"
 fi
 [ -f "$itarget/OLD-MARKER" ] || fail "previous agents not restored"
-[ "$(count_agents "$itarget")" -eq 10 ] || fail "restored agent count"
+assert_roster "$itarget" "restored install"
 leftovers "$interrupted/.opencode/agents" && fail "interrupted install left staging files"
 ok "interrupt rolls back and exits nonzero"
 

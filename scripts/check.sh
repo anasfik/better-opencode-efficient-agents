@@ -3,7 +3,7 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 agents=$root/agents/efficient
-expected='data opencode quality release-ops research seo ship ui-mobile'
+roster='data opencode quality release-ops research seo ship ui-mobile'
 
 fail() {
   echo "check failed: $*" >&2
@@ -12,11 +12,21 @@ fail() {
 
 [ -d "$agents" ] || fail "missing agents/efficient"
 
-set -- "$agents"/*.md
-count=$#
-[ "$count" -eq 8 ] || fail "expected 8 agents, found $count"
+actual_count=0
+for file in "$agents"/*.md; do
+  [ -f "$file" ] || continue
+  name=${file##*/}
+  name=${name%.md}
+  case " $roster " in
+    *" $name "*) ;;
+    *) fail "unexpected agent $name.md" ;;
+  esac
+  actual_count=$((actual_count + 1))
+done
+set -- $roster
+[ "$actual_count" -eq "$#" ] || fail "expected $# agents, found $actual_count"
 
-for name in $expected; do
+for name in $roster; do
   file=$agents/$name.md
   [ -f "$file" ] || fail "missing $name.md"
   [ "$(sed -n '1p' "$file")" = '---' ] || fail "$name.md has no frontmatter"
@@ -40,24 +50,37 @@ if grep -R -n '^model:' "$agents"; then
   fail "agent definitions must inherit the active model"
 fi
 
-edit_files=$(grep -l 'action: edit' "$agents"/*.md || true)
-[ "$edit_files" = "$agents/ship.md" ] || fail "ship must be the only workspace mutator"
-
-for name in data opencode quality release-ops research seo ui-mobile; do
+for name in $roster; do
+  [ "$name" = ship ] && continue
   file=$agents/$name.md
-  grep -q 'action: skill' "$file" || fail "$name must allow skills"
+  grep -A2 '^  - action: skill$' "$file" | grep -q '^    effect: allow$' || fail "$name must allow skills"
 done
 
-for name in data opencode quality research seo ui-mobile; do
-  file=$agents/$name.md
-  if grep -qE 'action: (edit|execute|shell|subagent)' "$file"; then
-    fail "$name must remain strictly read-only"
+for action in edit shell execute; do
+  exposed=
+  for name in $roster; do
+    if grep -q "^  - action: $action$" "$agents/$name.md"; then
+      exposed="${exposed:+$exposed }$name"
+    fi
+  done
+  case $action in
+    edit) expected=ship ;;
+    *) expected='release-ops ship' ;;
+  esac
+  [ "$exposed" = "$expected" ] || fail "$action exposed to '$exposed', expected '$expected'"
+done
+
+for action in edit skill; do
+  if ! grep -A2 "^  - action: $action$" "$agents/ship.md" | grep -q '^    effect: allow$'; then
+    fail "ship must allow $action"
   fi
 done
 
-for action in shell execute; do
-  grep -A2 "action: $action" "$agents/release-ops.md" | grep -q 'effect: ask' ||
-    fail "release-ops $action must require approval"
+for name in release-ops ship; do
+  for action in shell execute; do
+    grep -A2 "^  - action: $action$" "$agents/$name.md" | grep -q '^    effect: ask$' ||
+      fail "$name $action must require approval"
+  done
 done
 
 private_home='/'home'/[[:alnum:]_.-]+'
