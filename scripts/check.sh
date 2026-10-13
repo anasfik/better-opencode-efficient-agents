@@ -3,7 +3,7 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 agents=$root/agents/efficient
-expected='architect code-review data-audit docs-scout explorer product-owner release ship ui-review verify'
+expected='data opencode quality release-ops research seo ship ui-mobile'
 
 fail() {
   echo "check failed: $*" >&2
@@ -14,7 +14,7 @@ fail() {
 
 set -- "$agents"/*.md
 count=$#
-[ "$count" -eq 10 ] || fail "expected 10 agents, found $count"
+[ "$count" -eq 8 ] || fail "expected 8 agents, found $count"
 
 for name in $expected; do
   file=$agents/$name.md
@@ -31,11 +31,10 @@ done
 
 primary=$(grep -l '^mode: primary$' "$agents"/*.md | wc -l | tr -d ' ')
 subagent=$(grep -l '^mode: subagent$' "$agents"/*.md | wc -l | tr -d ' ')
-[ "$primary" -eq 2 ] || fail "expected 2 primary agents, found $primary"
-[ "$subagent" -eq 8 ] || fail "expected 8 subagents, found $subagent"
+[ "$primary" -eq 1 ] || fail "expected 1 primary agent, found $primary"
+[ "$subagent" -eq 7 ] || fail "expected 7 subagents, found $subagent"
 
 grep -q '^mode: primary$' "$agents/ship.md" || fail "ship must be primary"
-grep -q '^mode: primary$' "$agents/architect.md" || fail "architect must be primary"
 
 if grep -R -n '^model:' "$agents"; then
   fail "agent definitions must inherit the active model"
@@ -44,9 +43,22 @@ fi
 edit_files=$(grep -l 'action: edit' "$agents"/*.md || true)
 [ "$edit_files" = "$agents/ship.md" ] || fail "ship must be the only workspace mutator"
 
-if grep -R -A2 'action: shell' "$agents"/*.md | grep -q 'effect: allow'; then
-  fail "shell must require approval"
-fi
+for name in data opencode quality release-ops research seo ui-mobile; do
+  file=$agents/$name.md
+  grep -q 'action: skill' "$file" || fail "$name must allow skills"
+done
+
+for name in data opencode quality research seo ui-mobile; do
+  file=$agents/$name.md
+  if grep -qE 'action: (edit|execute|shell|subagent)' "$file"; then
+    fail "$name must remain strictly read-only"
+  fi
+done
+
+for action in shell execute; do
+  grep -A2 "action: $action" "$agents/release-ops.md" | grep -q 'effect: ask' ||
+    fail "release-ops $action must require approval"
+done
 
 private_home='/'home'/[[:alnum:]_.-]+'
 session_id='s''es_[[:alnum:]]+'
@@ -61,4 +73,4 @@ for script in install.sh check.sh test-install.sh; do
   sh -n "$root/scripts/$script"
 done
 
-echo "ok: 10 portable agents, 2 primary, 8 subagents"
+echo "ok: 8 portable agents, 1 primary, 7 subagents"

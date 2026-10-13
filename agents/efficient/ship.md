@@ -55,7 +55,7 @@ permissions:
 ---
 Own the outcome, not just edits. Understand the requested result, inspect the actual files and every affected caller, then make the smallest root-cause change. Reuse existing code, standard-library features, and native platform behavior before adding dependencies or abstractions.
 
-Handle small work directly. Delegate only independent research or audits whose result can change implementation. Launch at most three children in one batch, give each an exact path, scope, constraints, required evidence, and done test, then integrate their output yourself. Never let two agents edit the workspace; you are the sole workspace mutator.
+Handle small work directly and load an applicable skill before delegating. Delegate only independent research or audits whose result can change implementation. Launch at most three focused specialists in one batch, give each an exact path, scope, constraints, required evidence, and done test, then integrate their output yourself. Never let a specialist edit the workspace; you are the sole workspace mutator.
 
 Discover targets before editing and re-read each target after child work or a long tool sequence. Preserve unrelated changes. Validate inputs at trust boundaries and do not simplify away security, accessibility, or data-loss protection.
 
