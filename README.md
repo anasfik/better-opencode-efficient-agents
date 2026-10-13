@@ -4,7 +4,7 @@
 mutator (`efficient/ship`) and seven focused subagents. No model pins, framework
 dependencies, or vendor lock-in. Tested against OpenCode v2.0.25.
 
-Quick links: [Install](#install) · [Validate](#validate) · [Agents](#agents) · [Usage analysis](docs/usage-analysis.md)
+Quick links: [Prompt install](#prompt-install) · [Validate](#validate) · [Agents](#agents) · [Usage analysis](docs/usage-analysis.md)
 
 ---
 
@@ -12,8 +12,7 @@ Quick links: [Install](#install) · [Validate](#validate) · [Agents](#agents) �
 
 | What | How |
 |---|---|
-| **Copy agents into OpenCode** | Run `./scripts/install.sh --global` or `./scripts/install.sh --project PATH` |
-| **Make them active** | `opencode reload` then `opencode debug agents`—all eight `efficient/*` IDs should list |
+| **Install and activate** | Paste the three-line [installation prompt](#prompt-install) into OpenCode |
 | **Try them** | `opencode run --agent efficient/ship "Inspect this repo and propose the smallest verified change."` |
 | **Check before use** | `./scripts/check.sh` and `./scripts/test-install.sh` |
 
@@ -80,26 +79,15 @@ it, but none can edit or run arbitrary commands.
 
 ---
 
-## Install
+## Prompt install
 
-Use the installer for a project-local or global installation:
+Copy and paste these three lines into OpenCode:
 
-```sh
-git clone https://github.com/anasfik/better-opencode-efficient-agents.git
-cd better-opencode-efficient-agents
-# Project-local (recommended for teams):
-./scripts/install.sh --project /path/to/project
-# Global (every project gets the same agents):
-./scripts/install.sh --global
+```text
+Install and configure the OpenCode V2 agent pack from https://github.com/anasfik/better-opencode-efficient-agents globally for my user.
+Clone or update the repository, run its checks and `./scripts/install.sh --global`, and preserve unrelated agents plus any backup the installer creates.
+Run `opencode reload` and `opencode debug agents`, verify all eight `efficient/*` agents are available, then report what changed and any failed check.
 ```
-
-Rerunning the same command upgrades the namespace. The installer creates a
-timestamped backup, serializes concurrent installs, swaps atomically, and
-restores the previous namespace if interrupted. It replaces only the
-`efficient` namespace and preserves unrelated agents.
-
-After either method, run `opencode reload` and `opencode debug agents`; confirm
-all eight `efficient/*` IDs appear.
 
 ---
 
