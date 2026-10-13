@@ -1,103 +1,102 @@
 # Anonymized OpenCode usage analysis
 
-## Method
+## Method and limits
 
-The source database was opened read-only. Complete structured messages were
-classified without inspecting authentication data. The current in-progress
-conversation tree was excluded. This repository contains only aggregate
-statistics and paraphrased lessons—no prompts, responses, session identifiers,
-personal paths, or database exports.
+This analysis was refreshed on October 13, 2026. It covers 164 completed or
+current-history sessions after excluding the active root tree: 92 roots and 72
+children across 14 projects. Legacy rows duplicated in V2 tables were not
+double-counted.
 
-The historical corpus contained 846 sessions from April through October 2026:
+The source data was read-only. This repository contains only aggregate counts
+and paraphrased conclusions—no prompts, responses, session identifiers,
+personal paths, authentication data, or database exports.
 
-- 270 root sessions
-- 576 child sessions
-- 216 roots done, 15 partial, 38 failed, and 1 empty
-- 515 children done and 61 failed
-
-Global statistics below cover that complete corpus. A separate recent-session
-sample was used only to confirm that short model probes should not be treated
-as representative workflow sessions.
+Theme classification, verification detection, and conclusion detection are
+heuristic. Themes overlap, so their percentages do not sum to 100%. The three
+busiest projects account for 70 of 92 roots, and this sample is not
+representative of every OpenCode user. No `efficient/*` agent appeared in the
+analyzed metadata; these results inform role fit, not this pack's effectiveness.
 
 ## Workload
 
-| Theme | Root sessions |
+| Overlapping root theme | Roots | Share of 92 roots |
+|---|---:|---:|
+| Testing or verification | 57 | 62.0% |
+| Review or audit | 45 | 48.9% |
+| Implementation | 44 | 47.8% |
+| Git or repositories | 44 | 47.8% |
+| Operations or deployment | 37 | 40.2% |
+| API or data administration | 36 | 39.1% |
+| OpenCode or agents | 35 | 38.0% |
+| Research, planning, or product | 31 | 33.7% |
+| Debugging or fixes | 25 | 27.2% |
+| UI or design | 24 | 26.1% |
+| SEO or content | 17 | 18.5% |
+
+Stack signals appeared in 31 OpenCode roots, 16 SEO or marketing roots, 14 web
+JavaScript/TypeScript roots, 11 Cloudflare or edge roots, 11 data or Postgres
+roots, 9 Flutter or mobile roots, and 2 Python roots. These signals overlap and
+describe this sample, not market share.
+
+The mix supports one implementation owner plus focused quality, research,
+interface, data, SEO, OpenCode, and operational help. Framework and vendor
+knowledge changes too quickly to duplicate in static agent prompts, so each
+specialist loads the narrowest applicable installed skill first.
+
+## Delegation and completion
+
+- 14 of 92 roots delegated and created 72 children.
+- Six roots exceeded three children; maximum fan-out was 21.
+- Of 74 subagent or task calls, 34 used `general`, 12 used `explore`, and 28
+  used SEO specialists.
+- Root tool-use median was 36.5 calls, p90 was 169, and the maximum was 1,481.
+  Twenty-two roots used at least 100 calls and three used at least 500.
+- 13 of 92 roots lacked a final parent conclusion.
+- Verification was requested in 53 roots; 13 lacked recognizable command
+  evidence.
+
+The pack therefore keeps delegation bounded and leaves synthesis, final checks,
+and the conclusion with `efficient/ship`. Child output and tool completion are
+evidence, not task completion.
+
+## Tool failures
+
+Across 8,591 V2 tool calls, 126 failed (1.47%):
+
+| Failure class | Calls |
 |---|---:|
-| Implementation | 57.0% |
-| Review or audit | 54.1% |
-| OpenCode or agents | 49.3% |
-| Git or repositories | 43.0% |
-| UI or design | 42.2% |
-| API or data administration | 40.4% |
-| Testing or verification | 37.0% |
-| Debugging or fixes | 36.7% |
-| Operations or deployment | 35.2% |
-| Research, planning, or product | 32.6% |
+| Missing targets or resources | 47 |
+| Cancelled or interrupted | 36 |
+| Permission or authentication | 17 |
+| Remote or network | 5 |
+| Stale edit context | 3 |
+| Invalid input | 1 |
+| Other | 17 |
 
-Implementation and review overlap heavily, so the pack keeps one implementer
-and independent read-only gates instead of creating several competing owners.
-
-## Outcomes and delegation
-
-- Root completion rate: 80.0%.
-- Child completion rate: 89.4%.
-- 79 of 270 roots delegated work.
-- Delegated roots produced 72 done and 7 partial outcomes. This is an
-  association, not proof that delegation caused success.
-- Median root tool use was 32.5 calls; p90 was 672.
-- High-fan-out partial sessions reached dozens of children and thousands of
-  tool calls.
-
-The resulting rule is bounded delegation: launch at most three independent
-children in one batch, integrate their findings, and only then decide whether
-another batch is justified.
-
-## Verification gap
-
-Explicit verification was requested in 150 roots, but 54 contained no evidenced
-check. Forty roots also lacked a final parent conclusion even when tools or
-children completed successfully.
-
-Every primary agent therefore ends with:
-
-1. changed files or an explicit no-change statement,
-2. commands or checks run and their results,
-3. residual risks, blockers, or manual steps.
-
-Tool completion and child completion are evidence, not task completion.
-
-## Failure concentration
-
-Across 65,333 tool calls, 1,219 failed (1.87%). The largest groups were:
-
-- missing targets or resources: 317,
-- stale edit context: 204,
-- invalid input or schema: 126,
-- cancelled or interrupted work: 110,
-- remote server errors: 68.
-
-Missing resources plus stale edits caused 42.7% of tool failures. The smallest
-prevention is to discover paths first, inspect callers, re-read immediately
-before editing, and apply a narrow patch.
-
-Remote API creation and update failures were more concentrated than local file
-operations. Release, deployment, tracker, and other remote mutations therefore
-remain approval-gated and separate from normal implementation.
+Missing targets were the largest class. Agents should discover files and
+resources before acting, inspect affected callers, and re-read targets before a
+narrow edit. Permission and remote failures support keeping operational actions
+explicitly approval-gated rather than granting broad shell or provider access.
 
 ## Design mapping
 
 | Observed need | Pack response |
 |---|---|
-| Frequent implementation | `efficient/ship` is the sole workspace mutator |
-| Missing paths and stale edits | `efficient/explorer` plus mandatory fresh reads |
-| Missing check evidence | `efficient/verify` and root-level reporting |
-| Review and security demand | `efficient/code-review` |
-| Version-sensitive external APIs | `efficient/docs-scout` |
-| Visual and accessibility work | `efficient/ui-review` |
-| Data and API administration | `efficient/data-audit` |
-| Git, deployment, and release work | `efficient/release` with approval boundaries |
-| Product ambiguity and QA | `efficient/product-owner` |
-| Cross-cutting planning | `efficient/architect` |
+| Implementation and parent conclusions | `efficient/ship` is the one primary and sole editor in this pack |
+| Code paths, current docs, and bounded evidence | `efficient/research` |
+| Verification, review, security, and regressions | `efficient/quality` |
+| Web/mobile UX and accessibility | `efficient/ui-mobile` |
+| Schemas, migrations, APIs, privacy, and rollback | `efficient/data` |
+| Search visibility and content | `efficient/seo` |
+| OpenCode configuration and integrations | `efficient/opencode` |
+| Releases, deployment, and remote operations | `efficient/release-ops`, with per-action approval |
 
-Framework and vendor specialists belong in optional packs. The core must still
-load and give a precise blocker when no external integration is installed.
+The seven specialists do not edit workspace files. `release-ops` can request
+shell, execute, and external-directory access because its work may require
+operational tools, but every such use remains approval-gated. Never use
+`release-ops` with auto-approval.
+
+These namespaced agents supplement rather than replace OpenCode's built-in
+`build`, `plan`, `general`, and `explore` roles. Built-ins remain available for
+general-purpose workflows; use the `efficient/*` roles when their narrower
+scope, skill-first instructions, and permission boundaries fit the task.
